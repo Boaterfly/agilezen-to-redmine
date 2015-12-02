@@ -1,10 +1,10 @@
 all: vendor
 
 vendor: composer.lock
-	composer install
+	composer install --optimize-autoloader
 
 composer.lock: composer.json
-	composer update
+	composer update --optimize-autoloader
 
 .PHONY: clean
 clean:
