@@ -5,3 +5,7 @@ vendor: composer.lock
 
 composer.lock: composer.json
 	composer update
+
+.PHONY: clean
+clean:
+	git clean -fdx
