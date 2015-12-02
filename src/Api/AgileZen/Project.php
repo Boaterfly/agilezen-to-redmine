@@ -1,10 +1,11 @@
 <?php
 
-namespace AgilezenToRedmine\Api\AgileZen;
+namespace AgileZenToRedmine\Api\AgileZen;
 
 class Project
 {
     use \lpeltier\Struct;
+    use \AgileZenToRedmine\PrettyJsonString;
 
     /// @var int
     public $id;

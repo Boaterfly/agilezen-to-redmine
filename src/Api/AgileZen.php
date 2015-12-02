@@ -1,11 +1,11 @@
 <?php
 
-namespace AgilezenToRedmine\Api;
+namespace AgileZenToRedmine\Api;
 
 use GuzzleHttp\Client;
 
-use AgilezenToRedmine\Api\AgileZen\Project;
-use AgilezenToRedmine\Api\AgileZen\User;
+use AgileZenToRedmine\Api\AgileZen\Project;
+use AgileZenToRedmine\Api\AgileZen\User;
 
 class AgileZen
 {

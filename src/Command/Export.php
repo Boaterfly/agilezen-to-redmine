@@ -1,6 +1,6 @@
 <?php
 
-namespace AgilezenToRedmine\Command;
+namespace AgileZenToRedmine\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use AgilezenToRedmine\Api\AgileZen;
+use AgileZenToRedmine\Api\AgileZen;
 
 class Export extends Command
 {
@@ -41,13 +41,28 @@ class Export extends Command
         }
 
         $api = new AgileZen($token);
+        $projects = $api->projects();
+        $projectId = (int) $input->getOption('project-id');
 
-        if ($input->getOption('project-id') === null) {
+        if ($projectId === null) {
             $output->writeln('You need to specify a project ID to export with --project-id=PROJECT-ID.');
             $output->writeln('Here are the available projects:');
-            $this->renderProjectList($output, $api->projects());
+            $this->renderProjectList($output, $projects);
             return 1;
         }
+
+        if (!in_array($projectId, collection_column($projects, 'id'), true)) {
+            $output->writeln('Unknown project id.');
+            $output->writeln('Here are the available projects:');
+            $this->renderProjectList($output, $projects);
+            return 1;
+        }
+
+        $project = collection_filter($projects, function ($v) use ($projectId) {
+            return $v->id === $projectId;
+        })[0];
+
+        $output->writeln("Using project #$projectId: $project");
     }
 
     /**

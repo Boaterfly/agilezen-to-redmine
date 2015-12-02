@@ -17,8 +17,11 @@
         "symfony/console": "~3.0"
     },
     "autoload": {
+        "files": [
+            "src/functions.php"
+        ],
         "psr-4": {
-            "AgilezenToRedmine\\": "src/"
+            "AgileZenToRedmine\\": "src/"
         }
     }
 }
