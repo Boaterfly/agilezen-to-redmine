@@ -1,0 +1,22 @@
+{
+    "name": "Boaterfly/agilezen-to-redmine",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Léo Peltier",
+            "email": "contact@leo-peltier.fr",
+            "homepage": "https://leo-peltier.fr",
+            "role": "developer"
+        }
+    ],
+    "require": {
+        "php": ">= 5.6",
+        "symfony/console": "~3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AgilezenToRedmine\\": "src/"
+        }
+    }
+}
