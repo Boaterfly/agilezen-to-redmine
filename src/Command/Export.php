@@ -13,6 +13,9 @@ use AgileZenToRedmine\Api\AgileZen;
 
 class Export extends Command
 {
+    /// @var AgileZen
+    private $api;
+
     protected function configure()
     {
         $this
@@ -35,34 +38,45 @@ class Export extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $project = $this->getProject($input, $output);
+        $output->writeln("Using project: $project");
+    }
+
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
         $token = $input->getOption('agilezen-key');
         if (strlen($token) <= 0) {
             throw new \RuntimeException('--agilezen-key is mandatory.');
         }
 
-        $api = new AgileZen($token);
-        $projects = $api->projects();
+        $this->api = new AgileZen($token);
+    }
+
+    /// @return Project from given --project-id
+    private function getProject(InputInterface $input, OutputInterface $output)
+    {
+        $projects = $this->api->projects();
         $projectId = (int) $input->getOption('project-id');
 
         if ($projectId === null) {
             $output->writeln('You need to specify a project ID to export with --project-id=PROJECT-ID.');
             $output->writeln('Here are the available projects:');
             $this->renderProjectList($output, $projects);
-            return 1;
+            exit(1);
         }
 
         if (!in_array($projectId, collection_column($projects, 'id'), true)) {
             $output->writeln('Unknown project id.');
             $output->writeln('Here are the available projects:');
             $this->renderProjectList($output, $projects);
-            return 1;
+            exit(1);
         }
 
         $project = collection_filter($projects, function ($v) use ($projectId) {
             return $v->id === $projectId;
         })[0];
 
-        $output->writeln("Using project #$projectId: $project");
+        return $project;
     }
 
     /**
