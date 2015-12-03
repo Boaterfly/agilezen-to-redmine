@@ -65,16 +65,13 @@ class Export extends Command
             exit(1);
         }
 
-        if (!in_array($projectId, collection_column($projects, 'id'), true)) {
-            $output->writeln('Unknown project id.');
+        $project = collection_find_first($projects, 'id', $projectId);
+        if ($project === null) {
+            $output->writeln('Unknown project.');
             $output->writeln('Here are the available projects:');
             $this->renderProjectList($output, $projects);
             exit(1);
         }
-
-        $project = collection_filter($projects, function ($v) use ($projectId) {
-            return $v->id === $projectId;
-        })[0];
 
         return $project;
     }

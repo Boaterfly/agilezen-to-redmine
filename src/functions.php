@@ -89,3 +89,21 @@ function collection_filter($collection, callable $callback)
         return $ret;
     }
 }
+
+/**
+ * Return the first item of the collection that has the given $field set to
+ * $value.
+ *
+ * @param mixed $collection
+ * @param string $field
+ * @param mixed $value
+ * @return mixed|null null if not found.
+ */
+function collection_find_first($collection, $field, $value)
+{
+    $found = collection_filter($collection, function ($map) use ($field, $value) {
+        return map_get($map, $field) === $value;
+    });
+
+    return (count($found) > 0) ? reset($found) : null;
+}
