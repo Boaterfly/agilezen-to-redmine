@@ -113,7 +113,9 @@ class AgileZen
         $items = [];
 
         for (;;) {
-            $curQuery = http_build_query(['page' => $curPage] + $originalQueryArray);
+            $curQuery = http_build_query(
+                ['page' => $curPage, 'pageSize' => 1000] + $originalQueryArray
+            );
             $curUri = "$originalPath?$curQuery";
 
             $curResult = $this->get($curUri);
