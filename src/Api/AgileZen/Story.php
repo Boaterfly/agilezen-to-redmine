@@ -27,6 +27,9 @@ class Story implements Marshallable
     /// @var Comment[]
     public $comments = [];
 
+    /// @var Attachment[]
+    public $attachments = [];
+
     /// @var string
     public $text;
 

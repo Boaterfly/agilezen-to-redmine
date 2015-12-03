@@ -4,6 +4,7 @@ namespace AgileZenToRedmine\Api;
 
 use GuzzleHttp\Client;
 
+use AgileZenToRedmine\Api\AgileZen\Attachment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
 
@@ -52,6 +53,21 @@ class AgileZen
 
         return array_map(
             Story::class . '::marshal',
+            $this->unpaginatedGet($uri)['items']
+        );
+    }
+
+    /**
+     * @param int $projectId
+     * @param int $storyId
+     * return Story[]
+     */
+    public function attachments($projectId, $storyId)
+    {
+        $uri = "projects/$projectId/stories/$storyId/attachments";
+
+        return array_map(
+            Attachment::class . '::marshal',
             $this->unpaginatedGet($uri)['items']
         );
     }

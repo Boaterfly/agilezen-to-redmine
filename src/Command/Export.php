@@ -4,6 +4,7 @@ namespace AgileZenToRedmine\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -22,7 +23,7 @@ class Export extends Command
             ->setName('export')
             ->setDescription('Export data from AgileZen.')
             ->addArgument(
-                'output',
+                'output-dir',
                 InputArgument::REQUIRED,
                 'Where to write the exported data.'
             )
@@ -47,33 +48,31 @@ class Export extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $stats = (object) [
-            'projects' => 0,
-            'stories'  => 0,
-            'comments' => 0,
-        ];
-
         $projects = $this->api->projects();
-        $stats->projects = count($projects);
 
         foreach ($projects as $project) {
             $project->stories = $this->api->stories($project->id);
-            $stats->stories += count($project->stories);
-            $stats->comments += array_sum(array_map(
-                function ($story) {
-                    return count($story->comments);
-                },
-                $project->stories
-            ));
+            $output->writeln("Downloading attachment list for project #{$project->id}.");
+            $attachmentsBar = new ProgressBar($output, count($project->stories));
+            $attachmentsBar->start();
+
+            foreach ($project->stories as $story) {
+                $attachmentsBar->advance();
+                $story->attachments = $this->api->attachments($project->id, $story->id);
+            }
+
+            $attachmentsBar->finish();
+            $output->writeln('');
         }
 
-        $table = new Table($output);
-        $table->setHeaders(array_keys((array) $stats));
-        $table->setRows([array_values((array) $stats)]);
-        $table->render();
+        $outputDir = $input->getArgument('output-dir');
+        if (!file_exists($outputDir)) {
+            if (!mkdir($outputDir, 0775, true)) {
+                throw new \RuntimeException('Unable to create output dir.');
+            }
+        }
 
-        $out = $input->getArgument('output');
-        file_put_contents($out, serialize($projects));
+        file_put_contents("$outputDir/agilezen.dat", serialize($projects));
     }
 
     /**
