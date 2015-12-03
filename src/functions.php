@@ -107,3 +107,9 @@ function collection_find_first($collection, $field, $value)
 
     return (count($found) > 0) ? reset($found) : null;
 }
+
+// Waiting for the coalesce operator.
+function array_get(array $array, $key, $default = null)
+{
+    return array_key_exists($key, $array) ? $array[$key] : $default;
+}

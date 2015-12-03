@@ -2,7 +2,7 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class User
+class Comment
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -10,18 +10,17 @@ class User
     /// @var int
     public $id;
 
-    /// @var string human name
-    public $name;
-
-    /// @var string login
-    public $userName;
+    /// @var string
+    public $text;
 
     /// @var string
-    public $email;
+    public $createTime;
+
+    /// @var User
+    public $author;
 
     public static function marshal($raw)
     {
-        $author = new User($raw['author']);
-        return new self(compact('author') + $raw);
+        return new self($raw);
     }
 }

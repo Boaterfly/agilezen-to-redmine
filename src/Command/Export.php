@@ -36,12 +36,6 @@ class Export extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        $project = $this->getProject($input, $output);
-        $output->writeln("Using project: $project");
-    }
-
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $token = $input->getOption('agilezen-key');
@@ -50,6 +44,15 @@ class Export extends Command
         }
 
         $this->api = new AgileZen($token);
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $project = $this->getProject($input, $output);
+        $output->writeln("Using project #{$project->id} '{$project->name}'.");
+
+        $stories = $this->api->stories($project->id);
+        $this->renderStories($output, $stories);
     }
 
     /// @return Project from given --project-id
@@ -61,7 +64,7 @@ class Export extends Command
         if ($projectId === null) {
             $output->writeln('You need to specify a project ID to export with --project-id=PROJECT-ID.');
             $output->writeln('Here are the available projects:');
-            $this->renderProjectList($output, $projects);
+            $this->renderProjects($output, $projects);
             exit(1);
         }
 
@@ -69,7 +72,7 @@ class Export extends Command
         if ($project === null) {
             $output->writeln('Unknown project.');
             $output->writeln('Here are the available projects:');
-            $this->renderProjectList($output, $projects);
+            $this->renderProjects($output, $projects);
             exit(1);
         }
 
@@ -79,7 +82,7 @@ class Export extends Command
     /**
      * @param Project[] $projects
      */
-    private function renderProjectList(OutputInterface $output, array $projects)
+    private function renderProjects(OutputInterface $output, array $projects)
     {
         $table = new Table($output);
         $table->setHeaders(['ID', 'Name', 'Description', 'Owner']);
@@ -93,6 +96,35 @@ class Export extends Command
                 ];
             },
             $projects
+        ));
+        $table->render();
+    }
+
+    /**
+     * @param Story[] $stories
+     */
+    private function renderStories(OutputInterface $output, array $stories)
+    {
+        $table = new Table($output);
+        $table->setHeaders(['ID', 'Text', 'Creator', 'Owner', 'Comments', 'Status']);
+        $table->setRows(array_map(
+            function ($story) {
+                $text = mb_substr(str_replace(
+                    ["\n", "\t"],
+                    ['\n', '\t'],
+                    $story->text
+                ), 0, 40);
+
+                return [
+                    $story->id,
+                    $text,
+                    $story->creator->email,
+                    $story->owner ? $story->owner->email : '',
+                    count($story->comments),
+                    $story->status,
+                ];
+            },
+            $stories
         ));
         $table->render();
     }

@@ -21,4 +21,10 @@ class Project
 
     /// @var User
     public $owner;
+
+    public static function marshal($raw)
+    {
+        $owner = new User($raw['owner']);
+        return new self(compact('owner') + $raw);
+    }
 }
