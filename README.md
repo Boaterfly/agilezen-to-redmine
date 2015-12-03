@@ -27,7 +27,8 @@ settings](https://agilezen.com/settings).
 ```
 
 The AgileZen API can't be used to download attachments so an acual user has to
-be spoofed.
+be spoofed. **Do not log back in AgileZen** while files are being downloaded,
+AgileZen only allows one session per user.
 
 ## Notes
 No effort was made to reduce memory consumption. Your whole AgileZen dataset will
