@@ -11,12 +11,17 @@
         }
     ],
     "require": {
+        "guzzlehttp/guzzle": "~6.0",
+        "lpeltier/struct": "~1.0",
         "php": ">= 5.6",
         "symfony/console": "~3.0"
     },
     "autoload": {
+        "files": [
+            "src/functions.php"
+        ],
         "psr-4": {
-            "AgilezenToRedmine\\": "src/"
+            "AgileZenToRedmine\\": "src/"
         }
     }
 }

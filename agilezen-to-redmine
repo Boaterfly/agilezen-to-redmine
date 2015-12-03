@@ -1,14 +1,17 @@
 #!/usr/bin/env php
 <?php
 
-namespace AgilezenToRedmine;
+namespace AgileZenToRedmine;
 
 use Symfony\Component\Console\Application;
 
 require __DIR__ . '/vendor/autoload.php';
 
+error_reporting(-1);
+
 $app = new Application();
 $app->addCommands([
     new Command\Export(),
+    new Command\DownloadAttachments(),
 ]);
 $app->run();
