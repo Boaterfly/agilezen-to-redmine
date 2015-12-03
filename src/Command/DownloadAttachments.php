@@ -84,7 +84,7 @@ class DownloadAttachments extends Command
         $uri = "project/{$project->id}"
             . "/story/{$story->id}"
             . "/attachment/{$attachment->id}"
-            . "/download/{$attachment->fileName}"
+            . '/download/' . trim($attachment->fileName)
         ;
 
         $out = fopen($path, 'w+');
