@@ -49,8 +49,16 @@ class Story
     /// @var string
     public $deadline;
 
+    /// @var Tag[]
+    public $tags;
+
     public static function marshal($raw)
     {
+        $tags = array_map(
+            Tag::class . '::marshal',
+            $raw['tags']
+        );
+
         $comments = array_map(
             Comment::class . '::marshal',
             $raw['comments']

@@ -4,10 +4,8 @@ namespace AgileZenToRedmine\Api;
 
 use GuzzleHttp\Client;
 
-use AgileZenToRedmine\Api\AgileZen\Comment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
-use AgileZenToRedmine\Api\AgileZen\User;
 
 class AgileZen
 {
@@ -50,7 +48,7 @@ class AgileZen
      */
     public function stories($projectId)
     {
-        $uri = "projects/$projectId/stories?with=details,comments";
+        $uri = "projects/$projectId/stories?with=details,comments,tags";
 
         return array_map(
             Story::class . '::marshal',
