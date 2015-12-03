@@ -12,5 +12,6 @@ error_reporting(-1);
 $app = new Application();
 $app->addCommands([
     new Command\Export(),
+    new Command\DownloadAttachments(),
 ]);
 $app->run();
