@@ -40,7 +40,7 @@ class AgileZen
     {
         return array_map(
             Project::class . '::marshal',
-            $this->unpaginatedGet('projects')['items']
+            $this->unpaginatedGet('projects?with=phases')['items']
         );
     }
 

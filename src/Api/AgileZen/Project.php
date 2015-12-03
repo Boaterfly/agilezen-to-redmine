@@ -22,9 +22,20 @@ class Project
     /// @var User
     public $owner;
 
+    /// @var Phase[]
+    public $phases = [];
+
+    /// @var Stories[]
+    public $stories = [];
+
     public static function marshal($raw)
     {
         $owner = new User($raw['owner']);
-        return new self(compact('owner') + $raw);
+        $phases = array_map(
+            Phase::class . '::marshal',
+            $raw['phases']
+        );
+
+        return new self(compact('owner', 'phases') + $raw);
     }
 }

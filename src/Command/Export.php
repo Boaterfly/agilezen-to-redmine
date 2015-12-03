@@ -21,17 +21,16 @@ class Export extends Command
         $this
             ->setName('export')
             ->setDescription('Export data from AgileZen.')
+            ->addArgument(
+                'output',
+                InputArgument::REQUIRED,
+                'Where to write the exported data.'
+            )
             ->addOption(
                 'agilezen-key',
                 null,
                 InputOption::VALUE_REQUIRED,
                 'AgileZen API key.'
-            )
-            ->addOption(
-                'project-id',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'ID of the project to export.'
             )
         ;
     }
@@ -48,35 +47,33 @@ class Export extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $project = $this->getProject($input, $output);
-        $output->writeln("Using project #{$project->id} '{$project->name}'.");
+        $stats = (object) [
+            'projects' => 0,
+            'stories'  => 0,
+            'comments' => 0,
+        ];
 
-        $stories = $this->api->stories($project->id);
-        $this->renderStories($output, $stories);
-    }
-
-    /// @return Project from given --project-id
-    private function getProject(InputInterface $input, OutputInterface $output)
-    {
         $projects = $this->api->projects();
-        $projectId = (int) $input->getOption('project-id');
+        $stats->projects = count($projects);
 
-        if ($projectId === null) {
-            $output->writeln('You need to specify a project ID to export with --project-id=PROJECT-ID.');
-            $output->writeln('Here are the available projects:');
-            $this->renderProjects($output, $projects);
-            exit(1);
+        foreach ($projects as $project) {
+            $project->stories = $this->api->stories($project->id);
+            $stats->stories += count($project->stories);
+            $stats->comments += array_sum(array_map(
+                function ($story) {
+                    return count($story->comments);
+                },
+                $project->stories
+            ));
         }
 
-        $project = collection_find_first($projects, 'id', $projectId);
-        if ($project === null) {
-            $output->writeln('Unknown project.');
-            $output->writeln('Here are the available projects:');
-            $this->renderProjects($output, $projects);
-            exit(1);
-        }
+        $table = new Table($output);
+        $table->setHeaders(array_keys((array) $stats));
+        $table->setRows([array_values((array) $stats)]);
+        $table->render();
 
-        return $project;
+        $out = $input->getArgument('output');
+        file_put_contents($out, serialize($projects));
     }
 
     /**
