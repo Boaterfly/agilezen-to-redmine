@@ -2,7 +2,9 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class Project
+use AgileZenToRedmine\Marshallable;
+
+class Project implements Marshallable
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -28,7 +30,7 @@ class Project
     /// @var Stories[]
     public $stories = [];
 
-    public static function marshal($raw)
+    public static function marshal(array $raw)
     {
         $owner = new User($raw['owner']);
         $phases = array_map(

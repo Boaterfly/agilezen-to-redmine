@@ -2,7 +2,9 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class User
+use AgileZenToRedmine\Marshallable;
+
+class User implements Marshallable
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -19,7 +21,7 @@ class User
     /// @var string
     public $email;
 
-    public static function marshal($raw)
+    public static function marshal(array $raw)
     {
         $author = new User($raw['author']);
         return new self(compact('author') + $raw);

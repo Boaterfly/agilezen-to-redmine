@@ -2,7 +2,9 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class Phase
+use AgileZenToRedmine\Marshallable;
+
+class Phase implements Marshallable
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -19,7 +21,7 @@ class Phase
     /// @var int
     public $index;
 
-    public static function marshal($raw)
+    public static function marshal(array $raw)
     {
         return new self($raw);
     }

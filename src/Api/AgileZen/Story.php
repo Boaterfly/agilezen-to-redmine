@@ -2,7 +2,9 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class Story
+use AgileZenToRedmine\Marshallable;
+
+class Story implements Marshallable
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -52,7 +54,7 @@ class Story
     /// @var Tag[]
     public $tags;
 
-    public static function marshal($raw)
+    public static function marshal(array $raw)
     {
         $tags = array_map(
             Tag::class . '::marshal',

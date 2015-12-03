@@ -2,7 +2,9 @@
 
 namespace AgileZenToRedmine\Api\AgileZen;
 
-class Comment
+use AgileZenToRedmine\Marshallable;
+
+class Comment implements Marshallable
 {
     use \lpeltier\Struct;
     use \AgileZenToRedmine\PrettyJsonString;
@@ -19,7 +21,7 @@ class Comment
     /// @var User
     public $author;
 
-    public static function marshal($raw)
+    public static function marshal(array $raw)
     {
         return new self($raw);
     }
