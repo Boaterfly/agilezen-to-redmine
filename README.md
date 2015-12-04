@@ -45,3 +45,5 @@ allows one session per user.
   any, so **there will be one HTTP GET request per story** plus one per
   attachment.
 * Requests are done synchronously and sequentially.
+* There is an `--output-dir` option set to `export` by default. Change this if
+  you want your data to be exported elsewhere.
