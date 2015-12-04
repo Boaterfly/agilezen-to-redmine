@@ -21,7 +21,7 @@ All projects, stories, and comments will be downloaded.
 You can obtain your AgileZen API key in the 'developer' section of the [AgileZen
 settings](https://agilezen.com/settings).
 
-### 2. Download attachments from AgileZen.
+### 3. Download attachments from AgileZen.
 ```shell
 ./agilezen-to-redmine download-attachments --user=USER --password=PASSWORD
 ```
@@ -31,7 +31,7 @@ be spoofed.
 **Do not log back in AgileZen** while files are being downloaded, AgileZen only
 allows one session per user.
 
-### 3. Import into Redmine
+### 4. Import into Redmine
 ```shell
 ./agilezen-to-redmine import --redmine-url=URL --redmine-key=KEY
 ```
