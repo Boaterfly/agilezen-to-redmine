@@ -7,7 +7,6 @@ use AgileZenToRedmine\Marshallable;
 class Attachment implements Marshallable
 {
     use \lpeltier\Struct;
-    use \AgileZenToRedmine\PrettyJsonString;
 
     /// @var int
     public $id;

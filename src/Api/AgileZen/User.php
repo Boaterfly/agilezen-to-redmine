@@ -7,7 +7,6 @@ use AgileZenToRedmine\Marshallable;
 class User implements Marshallable
 {
     use \lpeltier\Struct;
-    use \AgileZenToRedmine\PrettyJsonString;
 
     /// @var int
     public $id;
