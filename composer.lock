@@ -4,7 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "075f1b98f391d59b6b8e7d7d1dc7dcdc",
+    "hash": "00807bac56422c741e0439f4bc6134cb",
+    "content-hash": "7f2763e423a8ac63dee77e55bcbe4f4c",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -176,6 +177,52 @@
                 "uri"
             ],
             "time": "2015-11-03 01:34:55"
+        },
+        {
+            "name": "kbsali/redmine-api",
+            "version": "v1.5.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kbsali/php-redmine-api.git",
+                "reference": "24011e66eef35396bc0e29774ef90dd3df4157ea"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kbsali/php-redmine-api/zipball/24011e66eef35396bc0e29774ef90dd3df4157ea",
+                "reference": "24011e66eef35396bc0e29774ef90dd3df4157ea",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Redmine": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kevin Saliou",
+                    "email": "kevin@saliou.name",
+                    "homepage": "http://kevin.saliou.name"
+                }
+            ],
+            "description": "Redmine API client",
+            "homepage": "https://github.com/kbsali/php-redmine-api",
+            "keywords": [
+                "api",
+                "redmine"
+            ],
+            "time": "2015-11-20 23:16:58"
         },
         {
             "name": "lpeltier/struct",
