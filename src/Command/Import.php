@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use AgileZenToRedmine\Dump;
 
 class Import extends Command
 {
@@ -59,5 +60,6 @@ class Import extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $dump = Dump::load($input->getOption('output-dir'));
     }
 }

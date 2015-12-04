@@ -23,6 +23,7 @@ class Comment implements Marshallable
 
     public static function marshal(array $raw)
     {
-        return new self($raw);
+        $author = new User($raw['author']);
+        return new self(compact('author') + $raw);
     }
 }

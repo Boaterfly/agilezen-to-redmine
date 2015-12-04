@@ -13,6 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use AgileZenToRedmine\Api\AgileZen\Attachment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
+use AgileZenToRedmine\Dump;
 
 class DownloadAttachments extends Command
 {
@@ -46,20 +47,17 @@ class DownloadAttachments extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $outputDir = $input->getOption('output-dir');
-        if (!file_exists("$outputDir/agilezen.dat")) {
-            throw new \RuntimeException('No exported data found at given output dir.');
-        }
+        $dump = Dump::load($outputDir);
 
         $attachmentsDir = "$outputDir/attachments";
         assert_writable_dir($attachmentsDir);
 
-        $projects = unserialize(file_get_contents("$outputDir/agilezen.dat"));
-        $progress = new ProgressBar($output, $this->getAttachmentSize($projects));
+        $progress = new ProgressBar($output, $this->getAttachmentSize($dump));
         $output->writeln('Get authenticated client.');
         $client = $this->getClient($input);
 
         $output->writeln('Start downloading files.');
-        foreach ($projects as $project) {
+        foreach ($dump->getProjects() as $project) {
             foreach ($project->stories as $story) {
                 foreach ($story->attachments as $attachment) {
                     $path = "$attachmentsDir/{$attachment->id}";
@@ -95,13 +93,15 @@ class DownloadAttachments extends Command
      * @param Project[] $projects
      * @return int
      */
-    private function getAttachmentSize(array $projects)
+    private function getAttachmentSize(Dump $dump)
     {
         $totalSize = 0;
 
-        foreach ($projects as $project) {
+        foreach ($dump->getProjects() as $project) {
             foreach ($project->stories as $story) {
-                $totalSize += array_sum(collection_column($story->attachments, 'sizeInBytes'));
+                $totalSize += array_sum(
+                    collection_column($story->attachments, 'sizeInBytes')
+                );
             }
         }
 

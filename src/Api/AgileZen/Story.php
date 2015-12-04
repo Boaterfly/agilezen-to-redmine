@@ -21,7 +21,7 @@ class Story implements Marshallable
     /// @var Phase
     public $phase;
 
-    /// @var User
+    /// @var User|null
     public $owner;
 
     /// @var Comment[]
