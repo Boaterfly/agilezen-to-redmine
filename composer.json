@@ -19,7 +19,8 @@
     },
     "autoload": {
         "files": [
-            "src/functions.php"
+            "src/functions.php",
+            "src/redmine_functions.php"
         ],
         "psr-4": {
             "AgileZenToRedmine\\": "src/"

@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use AgileZenToRedmine\Dump;
+use AgileZenToRedmine\Redmine;
 
 class Import extends Command
 {
@@ -70,16 +71,18 @@ class Import extends Command
         $dump = Dump::load($input->getOption('output-dir'));
 
         $this->createUsers($dump->getUsers());
+        $this->createProjects($dump->getProjects());
     }
 
     /**
-     * Create Redmine users if they don't already exist (email as primary key).
+     * Create Redmine users if they don't already exist, email is used for
+     * deduplication.
      *
      * @param User[] $users
      */
     private function createUsers(array $users)
     {
-        $this->output->writeln('Create users.');
+        $this->output->writeln('Create users:');
         $progress = new ProgressBar($this->output, count($users));
         $skipped = 0;
         $redmineUsers = array_column(
@@ -109,5 +112,60 @@ class Import extends Command
 
         $progress->finish();
         $this->output->writeln("\nDone creating users, skipped: $skipped");
+    }
+
+    /**
+     * Create Redmine projects if they don't already exist, Redmine project
+     * identifier is used for deduplication.
+     *
+     * @param Project[] $projects
+     */
+    private function createProjects(array $projects)
+    {
+        $this->output->writeln('Create projects:');
+        $progress = new ProgressBar($this->output, count($projects));
+        $skipped = 0;
+
+        $redmineUsers = $this->getEmailMappedRedmineUsers();
+        $redmineProjects = array_column(
+            $this->redmine->api('project')->all()['projects'],
+            'identifier'
+        );
+
+        foreach ($projects as $project) {
+            $identifier = Redmine\identifier_from_agilezen_project($project);
+            if (in_array($identifier, $redmineProjects, true)) {
+                $skipped += 1;
+                $progress->advance();
+                continue;
+            }
+
+            $description = Redmine\description_from_agilezen_project($project);
+            $this->redmine->api('project')->create([
+                'name'        => $project->name,
+                'identifier'  => $identifier,
+                'description' => $description,
+                'is_public'   => false,
+            ]);
+
+            $progress->advance();
+        }
+
+        $progress->finish();
+        $this->output->writeln("\nDone creating projects, skipped: $skipped");
+    }
+
+    /**
+     * Return a map of redmine user logins with their email as key.
+     *
+     * @return string[] mail => login
+     */
+    private function getEmailMappedRedmineUsers()
+    {
+        $ret = [];
+        foreach ($this->redmine->api('user')->all()['users'] as $user) {
+            $ret[$user['mail']] = $user['login'];
+        }
+        return $ret;
     }
 }
