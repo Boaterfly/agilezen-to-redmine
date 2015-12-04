@@ -21,10 +21,12 @@ class DownloadAttachments extends Command
         $this
             ->setName('download-attachments')
             ->setDescription('Download attachments from AgileZen.')
-            ->addArgument(
+            ->addOption(
                 'output-dir',
-                InputArgument::REQUIRED,
-                'Where to read and write the exported data.'
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Where to write the exported data.',
+                'export'
             )
             ->addOption(
                 'user',
@@ -43,7 +45,7 @@ class DownloadAttachments extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $outputDir = $input->getArgument('output-dir');
+        $outputDir = $input->getOption('output-dir');
         if (!file_exists("$outputDir/agilezen.dat")) {
             throw new \RuntimeException('No exported data found at given output dir.');
         }

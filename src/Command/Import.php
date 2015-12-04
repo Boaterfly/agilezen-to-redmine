@@ -19,10 +19,12 @@ class Import extends Command
         $this
             ->setName('import')
             ->setDescription('Import exported data from AgileZen into Redmine')
-            ->addArgument(
+            ->addOption(
                 'output-dir',
-                InputArgument::REQUIRED,
-                'Where to read the exported data.'
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Where to read the exported data.',
+                'export'
             )
             ->addOption(
                 'redmine-url',

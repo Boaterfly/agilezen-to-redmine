@@ -14,7 +14,7 @@ make
 
 ### 2. Export data from AgileZen.
 ```shell
-./agilezen-to-redmine export export --agilezen-key=AGILEZEN-KEY
+./agilezen-to-redmine export --agilezen-key=KEY
 ```
 
 All projects, stories, and comments will be downloaded.  
@@ -23,13 +23,18 @@ settings](https://agilezen.com/settings).
 
 ### 2. Download attachments from AgileZen.
 ```shell
-./agilezen-to-redmine download-attachments export --user=USER --password=PASSWORD
+./agilezen-to-redmine download-attachments --user=USER --password=PASSWORD
 ```
 
 The AgileZen API can't be used to download attachments so an acual user has to
 be spoofed.  
 **Do not log back in AgileZen** while files are being downloaded, AgileZen only
 allows one session per user.
+
+### 3. Import into Redmine
+```shell
+./agilezen-to-redmine import --redmine-url=URL --redmine-key=KEY
+```
 
 ## Notes
 * No effort was made to reduce memory consumption. Your whole AgileZen dataset
