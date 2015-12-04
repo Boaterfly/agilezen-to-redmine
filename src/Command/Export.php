@@ -17,6 +17,9 @@ class Export extends Command
     /// @var AgileZen
     private $api;
 
+    /// @var string where to store exported files.
+    private $outputDir;
+
     protected function configure()
     {
         $this
@@ -43,15 +46,28 @@ class Export extends Command
             throw new \RuntimeException('--agilezen-key is mandatory.');
         }
 
-        $this->api = new AgileZen($token);
+        $this->outputDir = $input->getArgument('output-dir');
+        assert_writable_dir($this->outputDir);
+
+        $apiDir = $this->outputDir . '/api';
+        assert_writable_dir($apiDir);
+
+        $this->api = new AgileZen([
+            'token' => $token,
+            'cache' => true,
+            'cacheDir' => $apiDir,
+        ]);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $projects = $this->api->projects();
+        $this->renderProjects($projects, $output);
 
         foreach ($projects as $project) {
+            $output->writeln("Downloading stories for project #{$project->id}.");
             $project->stories = $this->api->stories($project->id);
+
             $output->writeln("Downloading attachment list for project #{$project->id}.");
             $attachmentsBar = new ProgressBar($output, count($project->stories));
             $attachmentsBar->start();
@@ -65,20 +81,13 @@ class Export extends Command
             $output->writeln('');
         }
 
-        $outputDir = $input->getArgument('output-dir');
-        if (!file_exists($outputDir)) {
-            if (!mkdir($outputDir, 0775, true)) {
-                throw new \RuntimeException('Unable to create output dir.');
-            }
-        }
-
-        file_put_contents("$outputDir/agilezen.dat", serialize($projects));
+        file_put_contents("{$this->outputDir}/agilezen.dat", serialize($projects));
     }
 
     /**
      * @param Project[] $projects
      */
-    private function renderProjects(OutputInterface $output, array $projects)
+    private function renderProjects(array $projects, OutputInterface $output)
     {
         $table = new Table($output);
         $table->setHeaders(['ID', 'Name', 'Description', 'Owner']);
@@ -99,7 +108,7 @@ class Export extends Command
     /**
      * @param Story[] $stories
      */
-    private function renderStories(OutputInterface $output, array $stories)
+    private function renderStories(array $stories, OutputInterface $output)
     {
         $table = new Table($output);
         $table->setHeaders(['ID', 'Text', 'Creator', 'Owner', 'Comments', 'Status']);

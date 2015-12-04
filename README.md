@@ -39,3 +39,4 @@ allows one session per user.
 * There is no way to fetch all attachments at once or to know if a story has
   any, so **there will be one HTTP GET request per story** plus one per
   attachment.
+* Requests are done synchronously and sequentially.

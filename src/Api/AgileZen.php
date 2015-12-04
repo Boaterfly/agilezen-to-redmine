@@ -12,26 +12,45 @@ class AgileZen
 {
     const BASE_URI = 'https://agilezen.com/api/v1/';
 
-    // TODO: remove DEBUG_ things when done with the API.
-    /// @var bool cache every request, for debugging purposes only.
-    const DEBUG_CACHE = false;
-    const DEBUG_CACHE_DIR = '/tmp/agilezen';
-
     /// @var GuzzleHttp\Client
     private $client;
 
-    public function __construct($token)
+    /// @var bool should we cache every request.
+    private $cache = false;
+
+    /// @var string where to store raw API results.
+    private $cacheDir;
+
+    public function __construct(array $params)
     {
-        assert('is_string($token) && strlen($token) > 0');
+        $params += [
+            'token' => null,
+            'cache' => false,
+            'cacheDir' => null,
+        ];
+
+        assert('is_string($params["token"]) && strlen($params["token"]) > 0');
 
         $this->client = new Client([
             'base_uri' => self::BASE_URI,
             'headers' => [
-                'X-Zen-ApiKey' => $token,
+                'X-Zen-ApiKey' => $params["token"],
                 'Accept' => 'application/json',
                 'Accept-Encoding' => 'gzip',
             ]
         ]);
+
+        if ($params['cache'] !== false) {
+            if (!file_exists($params['cacheDir'])
+                || !is_dir($params['cacheDir'])
+                || !is_writeable($params['cacheDir'])
+            ) {
+                throw new \RuntimeException('Can\'t write to cache dir.');
+            }
+            $this->cache = true;
+            $this->cacheDir = $params['cacheDir'];
+        }
+
     }
 
     /// @return Project[]
@@ -80,8 +99,8 @@ class AgileZen
      */
     private function get($uri)
     {
-        if (self::DEBUG_CACHE) {
-            $debugCache = self::DEBUG_CACHE_DIR . "/$uri.json";
+        if ($this->cache) {
+            $debugCache = "{$this->cacheDir}/$uri.json";
             if (!file_exists(dirname($debugCache))) {
                 mkdir(dirname($debugCache), 0775, true);
             }
@@ -105,7 +124,7 @@ class AgileZen
             throw new \RuntimeException('Invalid JSON from AgileZen API.');
         }
 
-        if (self::DEBUG_CACHE) {
+        if ($this->cache) {
             file_put_contents($debugCache, $response->getBody());
         }
 

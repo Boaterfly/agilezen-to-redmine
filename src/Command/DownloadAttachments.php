@@ -49,11 +49,7 @@ class DownloadAttachments extends Command
         }
 
         $attachmentsDir = "$outputDir/attachments";
-        if (!file_exists($attachmentsDir)) {
-            if (!mkdir($attachmentsDir, 0775)) {
-                throw new \RuntimeException('Unable to create directory for downloaded attachments.');
-            }
-        }
+        assert_writable_dir($attachmentsDir);
 
         $projects = unserialize(file_get_contents("$outputDir/agilezen.dat"));
         $progress = new ProgressBar($output, $this->getAttachmentSize($projects));

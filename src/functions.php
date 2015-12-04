@@ -113,3 +113,29 @@ function array_get(array $array, $key, $default = null)
 {
     return array_key_exists($key, $array) ? $array[$key] : $default;
 }
+
+/**
+ * Ensure the given path is a directory, is writeable and has the given mode.
+ *
+ * If the directory does not exist, it will be created.
+ * Nothing is returned, RuntimeException are thrown.
+ *
+ * @param string $path
+ * @param int $chmod
+ */
+function assert_writable_dir($path, $chmod = 0755)
+{
+    if (!file_exists($path)) {
+        if (!mkdir($path, $chmod, true)) {
+            throw new \RuntimeException('Unable to create dir: ' . $path);
+        }
+    } else {
+        if (!is_dir($path)) {
+            throw new \RuntimeException('Path exists but is not a directory: ' . $path);
+        }
+    }
+
+    if (!chmod($path, $chmod)) {
+        throw new \RuntimeException('Unable to set permissions for path: ', $path);
+    }
+}
