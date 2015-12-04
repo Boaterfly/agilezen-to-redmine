@@ -52,7 +52,7 @@ class DownloadAttachments extends Command
         $attachmentsDir = "$outputDir/attachments";
         assert_writable_dir($attachmentsDir);
 
-        $progress = new ProgressBar($output, $this->getAttachmentSize($dump));
+        $progress = new ProgressBar($output, $dump->getTotalAttachmentSize());
         $output->writeln('Get authenticated client.');
         $client = $this->getClient($input);
 
@@ -88,26 +88,6 @@ class DownloadAttachments extends Command
             'sink' => $out
         ]);
     }
-
-    /**
-     * @param Project[] $projects
-     * @return int
-     */
-    private function getAttachmentSize(Dump $dump)
-    {
-        $totalSize = 0;
-
-        foreach ($dump->getProjects() as $project) {
-            foreach ($project->stories as $story) {
-                $totalSize += array_sum(
-                    collection_column($story->attachments, 'sizeInBytes')
-                );
-            }
-        }
-
-        return $totalSize;
-    }
-
 
     /**
      * @return GuzzleHttp\Client authentificated client ready to download

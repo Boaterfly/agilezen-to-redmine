@@ -73,4 +73,22 @@ class Dump
 
         return array_values($users);
     }
+
+    /**
+     * @return int
+     */
+    public function getTotalAttachmentSize()
+    {
+        $totalSize = 0;
+
+        foreach ($this->projects as $project) {
+            foreach ($project->stories as $story) {
+                $totalSize += array_sum(
+                    collection_column($story->attachments, 'sizeInBytes')
+                );
+            }
+        }
+
+        return $totalSize;
+    }
 }
