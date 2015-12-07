@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use AgileZenToRedmine\Api\AgileZen\Project;
+use AgileZenToRedmine\Api\AgileZen\Story;
 use AgileZenToRedmine\Dump;
 use AgileZenToRedmine\Redmine;
 
@@ -74,11 +75,13 @@ class Import extends Command
         $this->createUsers($dump->getUsers());
         $this->createProjects($dump->projects);
 
-        foreach ($dump->projects as $project) {
-            $dump->storyMapping = $this->createProjectIssues($project, $dump->storyMapping);
+        try {
+            foreach ($dump->projects as $project) {
+                $dump->storyMapping = $this->createProjectIssues($project, $dump->storyMapping);
+            }
+        } finally {
+            $dump->write();
         }
-
-        $dump->write();
     }
 
     /**
@@ -187,18 +190,28 @@ class Import extends Command
                 Redmine\login_from_agilezen_user($story->creator)
             );
 
+            $assignedToId = ($story->owner === null)
+                ? null
+                : Redmine\login_from_agilezen_user($story->owner)
+            ;
+
             $res = $this->redmine->api('issue')->create([
                 'project_id' => $projectId,
                 'subject' => Redmine\subject_from_agilezen_story($story),
                 'description' => Redmine\description_from_agilezen_story($story),
+                'assigned_to_id' => $assignedToId,
             ]);
+
+            $this->redmine->setImpersonateUser(null);
 
             if (empty($res->id)) {
                 throw new \RuntimeException("Unable to create issue for story #{$story->id}: {$res->error}.");
             }
+            $issueId = (int) ((string) $res->id);
 
-            $storyMapping[$story->id] = (int) ((string) $res->id);
-            $this->redmine->setImpersonateUser(null);
+            $this->createIssueComments($story, $issueId);
+
+            $storyMapping[$story->id] = $issueId;
             $progress->advance();
         }
 
@@ -206,6 +219,25 @@ class Import extends Command
         $this->output->writeln('');
         $this->output->writeln("\nDone creating issues, skipped: $skipped");
         return $storyMapping;
+    }
+
+    /**
+     * @return int $issueId
+     */
+    private function createIssueComments(Story $story, $issueId)
+    {
+        foreach ($story->comments as $comment) {
+            $this->redmine->setImpersonateUser(
+                Redmine\login_from_agilezen_user($comment->author)
+            );
+
+            $this->redmine->api('issue')->addNoteToIssue(
+                $issueId,
+                Redmine\note_from_agilezen_comment($comment)
+            );
+
+            $this->redmine->setImpersonateUser(null);
+        }
     }
 
     /// @return int

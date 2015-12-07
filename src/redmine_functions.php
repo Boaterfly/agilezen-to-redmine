@@ -2,6 +2,7 @@
 
 namespace AgileZenToRedmine\Redmine;
 
+use AgileZenToRedmine\Api\AgileZen\Comment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
 use AgileZenToRedmine\Api\AgileZen\User;
@@ -88,7 +89,18 @@ function description_from_agilezen_story(Story $story)
         '',
         $story->details,
         '',
-        "Story #{$story->id} from AgileZen.",
-        "Originally created at {$story->getCreateTime()} by {$story->creator->name}."
+        "Story #{$story->id} from AgileZen, originally created at {$story->getCreateTime()}."
+    ]);
+}
+
+/**
+ * @return string
+ */
+function note_from_agilezen_comment(Comment $comment)
+{
+    return implode("\n", [
+        $comment->text,
+        '',
+        "Comment #{$comment->id} from AgileZen, originally created at {$comment->createTime}.",
     ]);
 }
