@@ -56,10 +56,10 @@ class DownloadAttachments extends Command
         $output->writeln('Get authenticated client.');
         $client = $this->getClient($input);
 
+        $output->writeln('Start downloading files.');
         $progress = new ProgressBar($output, $dump->getTotalAttachmentSize());
         $progress->start();
 
-        $output->writeln('Start downloading files.');
         foreach ($dump->projects as $project) {
             foreach ($project->stories as $story) {
                 foreach ($story->attachments as $attachment) {
