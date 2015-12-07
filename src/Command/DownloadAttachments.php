@@ -13,6 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use AgileZenToRedmine\Api\AgileZen\Attachment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
+use AgileZenToRedmine\Dump;
 
 class DownloadAttachments extends Command
 {
@@ -21,10 +22,12 @@ class DownloadAttachments extends Command
         $this
             ->setName('download-attachments')
             ->setDescription('Download attachments from AgileZen.')
-            ->addArgument(
+            ->addOption(
                 'output-dir',
-                InputArgument::REQUIRED,
-                'Where to read and write the exported data.'
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Where to write the exported data.',
+                'export'
             )
             ->addOption(
                 'user',
@@ -43,24 +46,24 @@ class DownloadAttachments extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $outputDir = $input->getArgument('output-dir');
-        if (!file_exists("$outputDir/agilezen.dat")) {
-            throw new \RuntimeException('No exported data found at given output dir.');
-        }
+        $outputDir = $input->getOption('output-dir');
+        $dump = Dump::load($outputDir);
 
-        $attachmentsDir = "$outputDir/attachments";
-        assert_writable_dir($attachmentsDir);
+        $dump->attachmentsDir = "$outputDir/attachments";
+        assert_writable_dir($dump->attachmentsDir);
+        $dump->write();
 
-        $projects = unserialize(file_get_contents("$outputDir/agilezen.dat"));
-        $progress = new ProgressBar($output, $this->getAttachmentSize($projects));
         $output->writeln('Get authenticated client.');
         $client = $this->getClient($input);
 
         $output->writeln('Start downloading files.');
-        foreach ($projects as $project) {
+        $progress = new ProgressBar($output, $dump->getTotalAttachmentSize());
+        $progress->start();
+
+        foreach ($dump->projects as $project) {
             foreach ($project->stories as $story) {
                 foreach ($story->attachments as $attachment) {
-                    $path = "$attachmentsDir/{$attachment->id}";
+                    $path = $dump->getAttachmentPath($attachment);
                     $this->downloadAttachment($client, $path, $project, $story, $attachment);
                     $progress->advance($attachment->sizeInBytes);
                 }
@@ -69,10 +72,21 @@ class DownloadAttachments extends Command
 
         $progress->finish();
         $output->writeln('');
+
+        $maxSize = round($dump->getBiggestAttachmentSize() / 1024);
+        $output->writeln("Please ensure that Redmine maximum attachment size is greater than $maxSize.");
     }
 
-    private function downloadAttachment(Client $client, $path, Project $project, Story $story, Attachment $attachment)
-    {
+    /**
+     * @param string $path
+     */
+    private function downloadAttachment(
+        Client $client,
+        $path,
+        Project $project,
+        Story $story,
+        Attachment $attachment
+    ) {
         if (file_exists($path) && filesize($path) === $attachment->sizeInBytes) {
             return;
         }
@@ -88,24 +102,6 @@ class DownloadAttachments extends Command
             'sink' => $out
         ]);
     }
-
-    /**
-     * @param Project[] $projects
-     * @return int
-     */
-    private function getAttachmentSize(array $projects)
-    {
-        $totalSize = 0;
-
-        foreach ($projects as $project) {
-            foreach ($project->stories as $story) {
-                $totalSize += array_sum(collection_column($story->attachments, 'sizeInBytes'));
-            }
-        }
-
-        return $totalSize;
-    }
-
 
     /**
      * @return GuzzleHttp\Client authentificated client ready to download

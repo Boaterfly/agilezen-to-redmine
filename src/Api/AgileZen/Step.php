@@ -4,7 +4,7 @@ namespace AgileZenToRedmine\Api\AgileZen;
 
 use AgileZenToRedmine\Marshallable;
 
-class Attachment implements Marshallable
+class Step implements Marshallable
 {
     use \lpeltier\Struct;
 
@@ -12,16 +12,16 @@ class Attachment implements Marshallable
     public $id;
 
     /// @var string
-    public $fileName;
+    public $type;
 
     /// @var string
-    public $contentType;
+    public $startTime;
 
     /// @var string
-    public $token;
+    public $endTime;
 
     /// @var int
-    public $sizeInBytes;
+    public $duration;
 
     public static function marshal(array $raw)
     {

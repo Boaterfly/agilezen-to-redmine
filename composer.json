@@ -12,13 +12,15 @@
     ],
     "require": {
         "guzzlehttp/guzzle": "~6.0",
+        "kbsali/redmine-api": "~1.5",
         "lpeltier/struct": "~1.0",
         "php": ">= 5.6",
         "symfony/console": "~3.0"
     },
     "autoload": {
         "files": [
-            "src/functions.php"
+            "src/functions.php",
+            "src/redmine_functions.php"
         ],
         "psr-4": {
             "AgileZenToRedmine\\": "src/"

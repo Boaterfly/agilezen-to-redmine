@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use AgileZenToRedmine\Api\AgileZen;
+use AgileZenToRedmine\Dump;
 
 class Export extends Command
 {
@@ -25,10 +26,12 @@ class Export extends Command
         $this
             ->setName('export')
             ->setDescription('Export data from AgileZen.')
-            ->addArgument(
+            ->addOption(
                 'output-dir',
-                InputArgument::REQUIRED,
-                'Where to write the exported data.'
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Where to write the exported data.',
+                'export'
             )
             ->addOption(
                 'agilezen-key',
@@ -42,14 +45,15 @@ class Export extends Command
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $token = $input->getOption('agilezen-key');
-        if (strlen($token) <= 0) {
-            throw new \RuntimeException('--agilezen-key is mandatory.');
+        $outputDir = $input->getOption('output-dir');
+
+        if (strlen($token) <= 0 || strlen($outputDir) <= 0) {
+            throw new \RuntimeException('Both --output-dir and --agilezen-key are mandatory.');
         }
 
-        $this->outputDir = $input->getArgument('output-dir');
+        $this->outputDir = $outputDir;
+        $apiDir = "$outputDir/api";
         assert_writable_dir($this->outputDir);
-
-        $apiDir = $this->outputDir . '/api';
         assert_writable_dir($apiDir);
 
         $this->api = new AgileZen([
@@ -81,7 +85,9 @@ class Export extends Command
             $output->writeln('');
         }
 
-        file_put_contents("{$this->outputDir}/agilezen.dat", serialize($projects));
+        $dump = new Dump($this->outputDir);
+        $dump->projects = $projects;
+        $dump->write();
     }
 
     /**
