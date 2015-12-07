@@ -2,12 +2,17 @@
 
 namespace AgileZenToRedmine;
 
+use AgileZenToRedmine\Api\AgileZen\Attachment;
+
 class Dump
 {
     use \lpeltier\Struct;
 
     /// @var string where to write our data, cache, and attachments.
     private $outputDir;
+
+    /// @var string where attachments.
+    public $attachmentsDir;
 
     /// @var Project[]
     public $projects = [];
@@ -100,5 +105,33 @@ class Dump
         }
 
         return $totalSize;
+    }
+
+    /**
+     * @return string path
+     */
+    public function getAttachmentPath(Attachment $attachment)
+    {
+        assert('strlen($this->attachmentsDir) > 0');
+        return $this->attachmentsDir . '/' . $attachment->id;
+    }
+
+    /**
+     * Return the size in bytes of the biggest attachment.
+     *
+     * @return int
+     */
+    public function getBiggestAttachmentSize()
+    {
+        $max = 0;
+        foreach ($this->projects as $project) {
+            foreach ($project->stories as $story) {
+                foreach ($story->attachments as $attachment) {
+                    $max = max($attachment->sizeInBytes, $max);
+                }
+            }
+        }
+
+        return $max;
     }
 }

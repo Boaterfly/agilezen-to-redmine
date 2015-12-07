@@ -2,6 +2,7 @@
 
 namespace AgileZenToRedmine\Redmine;
 
+use AgileZenToRedmine\Api\AgileZen\Attachment;
 use AgileZenToRedmine\Api\AgileZen\Comment;
 use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Api\AgileZen\Story;
@@ -103,4 +104,12 @@ function note_from_agilezen_comment(Comment $comment)
         '',
         "Comment #{$comment->id} from AgileZen, originally created at {$comment->createTime}.",
     ]);
+}
+
+/**
+ * @return string
+ */
+function description_from_agilezen_attachment(Attachment $attachment)
+{
+    return "Attachment #{$attachment->id} from AgileZen.";
 }

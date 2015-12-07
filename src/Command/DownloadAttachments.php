@@ -49,18 +49,21 @@ class DownloadAttachments extends Command
         $outputDir = $input->getOption('output-dir');
         $dump = Dump::load($outputDir);
 
-        $attachmentsDir = "$outputDir/attachments";
-        assert_writable_dir($attachmentsDir);
+        $dump->attachmentsDir = "$outputDir/attachments";
+        assert_writable_dir($dump->attachmentsDir);
+        $dump->write();
 
-        $progress = new ProgressBar($output, $dump->getTotalAttachmentSize());
         $output->writeln('Get authenticated client.');
         $client = $this->getClient($input);
+
+        $progress = new ProgressBar($output, $dump->getTotalAttachmentSize());
+        $progress->start();
 
         $output->writeln('Start downloading files.');
         foreach ($dump->projects as $project) {
             foreach ($project->stories as $story) {
                 foreach ($story->attachments as $attachment) {
-                    $path = "$attachmentsDir/{$attachment->id}";
+                    $path = $dump->getAttachmentPath($attachment);
                     $this->downloadAttachment($client, $path, $project, $story, $attachment);
                     $progress->advance($attachment->sizeInBytes);
                 }
@@ -69,10 +72,21 @@ class DownloadAttachments extends Command
 
         $progress->finish();
         $output->writeln('');
+
+        $maxSize = round($dump->getBiggestAttachmentSize() / 1024);
+        $output->writeln("Please ensure that Redmine maximum attachment size is greater than $maxSize.");
     }
 
-    private function downloadAttachment(Client $client, $path, Project $project, Story $story, Attachment $attachment)
-    {
+    /**
+     * @param string $path
+     */
+    private function downloadAttachment(
+        Client $client,
+        $path,
+        Project $project,
+        Story $story,
+        Attachment $attachment
+    ) {
         if (file_exists($path) && filesize($path) === $attachment->sizeInBytes) {
             return;
         }

@@ -23,6 +23,9 @@ class Import extends Command
     /// @var OutputInterface
     private $output;
 
+    /// @var Dump
+    private $dump;
+
     protected function configure()
     {
         $this
@@ -70,17 +73,22 @@ class Import extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $dump = Dump::load($input->getOption('output-dir'));
+        $this->dump = Dump::load($input->getOption('output-dir'));
 
-        $this->createUsers($dump->getUsers());
-        $this->createProjects($dump->projects);
+        $this->createUsers($this->dump->getUsers());
+        $this->createProjects($this->dump->projects);
+
+        /* HACK: It seems that the client caches the project list and won't
+         * update it after creating a new one. We need to destroy and recreate
+         * the client to be able to fetch project ids. */
+        $this->initialize($input, $output);
 
         try {
-            foreach ($dump->projects as $project) {
-                $dump->storyMapping = $this->createProjectIssues($project, $dump->storyMapping);
+            foreach ($this->dump->projects as $project) {
+                $this->dump->storyMapping = $this->createProjectIssues($project);
             }
         } finally {
-            $dump->write();
+            $this->dump->write();
         }
     }
 
@@ -94,6 +102,7 @@ class Import extends Command
     {
         $this->output->writeln('Create users:');
         $progress = new ProgressBar($this->output, count($users));
+        $progress->start();
         $skipped = 0;
         $redmineUsers = array_column(
             $this->redmine->api('user')->all()['users'],
@@ -134,6 +143,7 @@ class Import extends Command
     {
         $this->output->writeln('Create projects:');
         $progress = new ProgressBar($this->output, count($projects));
+        $progress->start();
         $skipped = 0;
 
         $redmineProjects = array_column(
@@ -164,67 +174,101 @@ class Import extends Command
         $this->output->writeln("\nDone creating projects, skipped: $skipped");
     }
 
-    /**
-     * Create issues and return a mapping of AgileZen story ID to Redmine issue ID.
-     *
-     * @param int[] $storyMapping original mapping. This is used to skip
-     * already created issues.
-     * @return int[] story id => issue id
-     */
-    private function createProjectIssues(Project $project, array $storyMapping)
+    private function createProjectIssues(Project $project)
     {
         $this->output->writeln("Create issues for project #{$project->id}.");
         $progress = new ProgressBar($this->output, count($project->stories));
+        $progress->start();
         $skipped = 0;
 
         $projectId = $this->getRedmineProjectId($project);
 
         foreach ($project->stories as $story) {
-            if (array_key_exists($story->id, $storyMapping)) {
+            if (array_key_exists($story->id, $this->dump->storyMapping)) {
                 $skipped += 1;
                 $progress->advance();
                 continue;
             }
 
-            $this->redmine->setImpersonateUser(
-                Redmine\login_from_agilezen_user($story->creator)
-            );
+            $issueId = $this->createSingleIssue($story, $projectId);
+            $this->dump->storyMapping[$story->id] = $issueId;
 
-            $assignedToId = ($story->owner === null)
-                ? null
-                : Redmine\login_from_agilezen_user($story->owner)
-            ;
+            $this->createIssueComments($issueId, $story);
 
-            $res = $this->redmine->api('issue')->create([
-                'project_id' => $projectId,
-                'subject' => Redmine\subject_from_agilezen_story($story),
-                'description' => Redmine\description_from_agilezen_story($story),
-                'assigned_to_id' => $assignedToId,
-            ]);
-
-            $this->redmine->setImpersonateUser(null);
-
-            if (empty($res->id)) {
-                throw new \RuntimeException("Unable to create issue for story #{$story->id}: {$res->error}.");
-            }
-            $issueId = (int) ((string) $res->id);
-
-            $this->createIssueComments($story, $issueId);
-
-            $storyMapping[$story->id] = $issueId;
             $progress->advance();
         }
 
         $progress->finish();
         $this->output->writeln('');
         $this->output->writeln("\nDone creating issues, skipped: $skipped");
-        return $storyMapping;
+    }
+
+    /**
+     * @param int $projectId in which Redmine project this issue will be
+     * created.
+     * @return int created Redmine issue ID.
+     */
+    private function createSingleIssue(Story $story, $projectId)
+    {
+        $this->redmine->setImpersonateUser(
+            Redmine\login_from_agilezen_user($story->creator)
+        );
+
+        $assignedToId = ($story->owner === null)
+            ? null
+            : Redmine\login_from_agilezen_user($story->owner)
+        ;
+
+        $res = $this->redmine->api('issue')->create([
+            'project_id' => $projectId,
+            'subject' => Redmine\subject_from_agilezen_story($story),
+            'description' => Redmine\description_from_agilezen_story($story),
+            'assigned_to_id' => $assignedToId,
+            'uploads' => $this->uploadStoryAttachments($story),
+        ]);
+
+        $this->redmine->setImpersonateUser(null);
+
+        if (empty($res->id)) {
+            throw new \RuntimeException("Unable to create issue for story #{$story->id}: {$res->error}.");
+        }
+        $issueId = (int) ((string) $res->id);
+
+        return $issueId;
+    }
+
+    /**
+     * @return string[] parameters to feed redmine->api('issue')->attach
+     */
+    private function uploadStoryAttachments(Story $story)
+    {
+        $uploads = [];
+
+        foreach ($story->attachments as $attachment) {
+            $res = json_decode($this->redmine->api('attachment')->upload(
+                file_get_contents($this->dump->getAttachmentPath($attachment))
+            ));
+
+            if (empty($res->upload) || empty($res->upload->token)) {
+                $errors = implode("\n", $res->errors);
+                throw new \RuntimeException("Unable to upload attachment #{$attachment->id}: $errors.");
+            }
+
+            $uploads[] = [
+                'token' => $res->upload->token,
+                'filename' => $attachment->fileName,
+                'description' => Redmine\description_from_agilezen_attachment($attachment),
+                'content_type' => $attachment->contentType,
+            ];
+        }
+
+        return $uploads;
     }
 
     /**
      * @return int $issueId
      */
-    private function createIssueComments(Story $story, $issueId)
+    private function createIssueComments($issueId, Story $story)
     {
         foreach ($story->comments as $comment) {
             $this->redmine->setImpersonateUser(

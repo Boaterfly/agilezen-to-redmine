@@ -31,6 +31,8 @@ be spoofed.
 **Do not log back in AgileZen** while files are being downloaded, AgileZen only
 allows one session per user.
 
+You may need to change the maximum attachment size in Redmine settings.
+
 ### 4. Import into Redmine
 ```shell
 ./agilezen-to-redmine import --redmine-url=URL --redmine-key=KEY
