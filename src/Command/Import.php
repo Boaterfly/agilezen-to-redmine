@@ -210,14 +210,19 @@ class Import extends Command
      */
     private function createSingleIssue(Story $story, $projectId)
     {
+        static $users = null;
+        if ($users === null) {
+            $users = $this->getUserLoginToIdMapping();
+        }
+
         $this->redmine->setImpersonateUser(
             Redmine\login_from_agilezen_user($story->creator)
         );
 
-        $assignedToId = ($story->owner === null)
-            ? null
-            : Redmine\login_from_agilezen_user($story->owner)
-        ;
+        $assignedToId = null;
+        if ($story->owner !== null) {
+            $assignedToId = $users[Redmine\login_from_agilezen_user($story->owner)];
+        }
 
         $res = $this->redmine->api('issue')->create([
             'project_id' => $projectId,
@@ -288,5 +293,19 @@ class Import extends Command
     private function getRedmineProjectId(Project $project)
     {
         return $this->redmine->api('project')->getIdByName($project->name);
+    }
+
+    /**
+     * @return int[] string login => int id
+     */
+    private function getUserLoginToIdMapping()
+    {
+        $ret = [];
+        $users = $this->redmine->api('user')->all()['users'];
+        foreach ($users as $user) {
+            $ret[$user['login']] = $user['id'];
+        }
+
+        return $ret;
     }
 }
