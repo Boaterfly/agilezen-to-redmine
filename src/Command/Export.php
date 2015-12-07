@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use AgileZenToRedmine\Api\AgileZen;
+use AgileZenToRedmine\Dump;
 
 class Export extends Command
 {
@@ -84,7 +85,9 @@ class Export extends Command
             $output->writeln('');
         }
 
-        file_put_contents("{$this->outputDir}/agilezen.dat", serialize($projects));
+        $dump = new Dump($this->outputDir);
+        $dump->projects = $projects;
+        $dump->write();
     }
 
     /**

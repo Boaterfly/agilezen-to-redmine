@@ -29,6 +29,9 @@ class Story implements Marshallable
     /// @var Attachment[]
     public $attachments = [];
 
+    /// @var Steps[]
+    public $steps = [];
+
     /// @var string
     public $text;
 
@@ -68,6 +71,11 @@ class Story implements Marshallable
             $raw['comments']
         );
 
+        $steps = array_map(
+            Step::class . '::marshal',
+            $raw['steps']
+        );
+
         $owner = array_key_exists('owner', $raw)
             ? new User($raw['owner'])
             : null
@@ -76,7 +84,19 @@ class Story implements Marshallable
         $creator = new User($raw['creator']);
 
         return new self(
-            compact('owner', 'creator', 'comments') + $raw
+            compact('owner', 'creator', 'comments', 'steps') + $raw
         );
+    }
+
+    /// @return string
+    public function getCreateTime()
+    {
+        if (count($this->steps) <= 0) {
+            throw new \RuntimeException('Can\'t get steps for story.');
+        }
+
+        /* HACK: API returns steps in order and array order should be
+         * preserved, I hope this does not come back to bite me. */
+        return $this->steps[0]->startTime;
     }
 }

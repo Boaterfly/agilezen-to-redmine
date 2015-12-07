@@ -4,13 +4,21 @@ namespace AgileZenToRedmine;
 
 class Dump
 {
-    /// @var string
+    use \lpeltier\Struct;
+
+    /// @var string where to write our data, cache, and attachments.
     private $outputDir;
 
     /// @var Project[]
-    private $projects = [];
+    public $projects = [];
 
-    private function __construct($outputDir)
+    /// @var int[]
+    public $storyMapping = [];
+
+    /**
+     * @param string $outputDir
+     */
+    public function __construct($outputDir)
     {
         if (!file_exists($outputDir) || !is_dir($outputDir)) {
             throw new \RuntimeException('Given outputDir does not exist or is not a directory.');
@@ -22,9 +30,9 @@ class Dump
     /**
      * @return string
      */
-    private function getDataPath()
+    private static function getDataPath($outputDir)
     {
-        return "{$this->outputDir}/agilezen.dat";
+        return "$outputDir/agilezen.dat";
     }
 
     /**
@@ -33,17 +41,19 @@ class Dump
      */
     public static function load($outputDir)
     {
-        $dump = new self($outputDir);
-        $dump->projects = unserialize(file_get_contents(
-            $dump->getDataPath()
+        $dump = unserialize(file_get_contents(
+            self::getDataPath($outputDir)
         ));
+        $dump->outputDir = $outputDir;
+
         return $dump;
     }
 
-    /// @return Project[]
-    public function getProjects()
+    public function write()
     {
-        return $this->projects;
+        if (!file_put_contents(self::getDataPath($this->outputDir), serialize($this))) {
+            throw new \RuntimeException('Unable to write dump.');
+        }
     }
 
     /**

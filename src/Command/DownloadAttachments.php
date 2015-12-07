@@ -57,7 +57,7 @@ class DownloadAttachments extends Command
         $client = $this->getClient($input);
 
         $output->writeln('Start downloading files.');
-        foreach ($dump->getProjects() as $project) {
+        foreach ($dump->projects as $project) {
             foreach ($project->stories as $story) {
                 foreach ($story->attachments as $attachment) {
                     $path = "$attachmentsDir/{$attachment->id}";

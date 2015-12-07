@@ -68,7 +68,7 @@ class AgileZen
      */
     public function stories($projectId)
     {
-        $uri = "projects/$projectId/stories?with=details,comments,tags";
+        $uri = "projects/$projectId/stories?with=details,comments,tags,steps";
 
         return array_map(
             Story::class . '::marshal',

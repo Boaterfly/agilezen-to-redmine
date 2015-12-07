@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use AgileZenToRedmine\Api\AgileZen\Project;
 use AgileZenToRedmine\Dump;
 use AgileZenToRedmine\Redmine;
 
@@ -71,7 +72,13 @@ class Import extends Command
         $dump = Dump::load($input->getOption('output-dir'));
 
         $this->createUsers($dump->getUsers());
-        $this->createProjects($dump->getProjects());
+        $this->createProjects($dump->projects);
+
+        foreach ($dump->projects as $project) {
+            $dump->storyMapping = $this->createProjectIssues($project, $dump->storyMapping);
+        }
+
+        $dump->write();
     }
 
     /**
@@ -101,7 +108,7 @@ class Import extends Command
             $names = explode(' ', $user->name, 2) + ['NoFirstName', 'NoLastName'];
 
             $this->redmine->api('user')->create([
-                'login'     => explode('@', $user->email)[0],
+                'login'     => Redmine\login_from_agilezen_user($user),
                 'firstname' => $names[0],
                 'lastname'  => $names[1],
                 'mail'      => $user->email
@@ -126,7 +133,6 @@ class Import extends Command
         $progress = new ProgressBar($this->output, count($projects));
         $skipped = 0;
 
-        $redmineUsers = $this->getEmailMappedRedmineUsers();
         $redmineProjects = array_column(
             $this->redmine->api('project')->all()['projects'],
             'identifier'
@@ -156,16 +162,55 @@ class Import extends Command
     }
 
     /**
-     * Return a map of redmine user logins with their email as key.
+     * Create issues and return a mapping of AgileZen story ID to Redmine issue ID.
      *
-     * @return string[] mail => login
+     * @param int[] $storyMapping original mapping. This is used to skip
+     * already created issues.
+     * @return int[] story id => issue id
      */
-    private function getEmailMappedRedmineUsers()
+    private function createProjectIssues(Project $project, array $storyMapping)
     {
-        $ret = [];
-        foreach ($this->redmine->api('user')->all()['users'] as $user) {
-            $ret[$user['mail']] = $user['login'];
+        $this->output->writeln("Create issues for project #{$project->id}.");
+        $progress = new ProgressBar($this->output, count($project->stories));
+        $skipped = 0;
+
+        $projectId = $this->getRedmineProjectId($project);
+
+        foreach ($project->stories as $story) {
+            if (array_key_exists($story->id, $storyMapping)) {
+                $skipped += 1;
+                $progress->advance();
+                continue;
+            }
+
+            $this->redmine->setImpersonateUser(
+                Redmine\login_from_agilezen_user($story->creator)
+            );
+
+            $res = $this->redmine->api('issue')->create([
+                'project_id' => $projectId,
+                'subject' => Redmine\subject_from_agilezen_story($story),
+                'description' => Redmine\description_from_agilezen_story($story),
+            ]);
+
+            if (empty($res->id)) {
+                throw new \RuntimeException("Unable to create issue for story #{$story->id}: {$res->error}.");
+            }
+
+            $storyMapping[$story->id] = (int) ((string) $res->id);
+            $this->redmine->setImpersonateUser(null);
+            $progress->advance();
         }
-        return $ret;
+
+        $progress->finish();
+        $this->output->writeln('');
+        $this->output->writeln("\nDone creating issues, skipped: $skipped");
+        return $storyMapping;
+    }
+
+    /// @return int
+    private function getRedmineProjectId(Project $project)
+    {
+        return $this->redmine->api('project')->getIdByName($project->name);
     }
 }
