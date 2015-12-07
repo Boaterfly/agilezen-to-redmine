@@ -69,52 +69,6 @@ function collection_map($collection, callable $callback)
 }
 
 /**
- * @param mixed $collection
- * @return mixed[]
- */
-function collection_filter($collection, callable $callback)
-{
-    assert('is_iterable($collection)');
-
-    if (is_array($collection)) {
-        return array_filter($collection, $callback);
-    } else {
-        $ret = [];
-        foreach ($collection as $v) {
-            // implicit cast to mimic array_filter behavior
-            if ($callback($v)) {
-                $ret[] = $callback($v);
-            }
-        }
-        return $ret;
-    }
-}
-
-/**
- * Return the first item of the collection that has the given $field set to
- * $value.
- *
- * @param mixed $collection
- * @param string $field
- * @param mixed $value
- * @return mixed|null null if not found.
- */
-function collection_find_first($collection, $field, $value)
-{
-    $found = collection_filter($collection, function ($map) use ($field, $value) {
-        return map_get($map, $field) === $value;
-    });
-
-    return (count($found) > 0) ? reset($found) : null;
-}
-
-// Waiting for the coalesce operator.
-function array_get(array $array, $key, $default = null)
-{
-    return array_key_exists($key, $array) ? $array[$key] : $default;
-}
-
-/**
  * Ensure the given path is a directory, is writeable and has the given mode.
  *
  * If the directory does not exist, it will be created.
