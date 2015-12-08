@@ -2,7 +2,6 @@
 
 namespace AgileZenToRedmine\Command;
 
-use Redmine\Client;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,8 +16,7 @@ use AgileZenToRedmine\Redmine;
 
 class Import extends Command
 {
-    /// @var Redmine\Client
-    private $redmine;
+    use RedmineCommandTrait;
 
     /// @var OutputInterface
     private $output;
@@ -38,37 +36,14 @@ class Import extends Command
                 'Where to read the exported data.',
                 'export'
             )
-            ->addOption(
-                'redmine-url',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Redmine HTTP URL.'
-            )
-            ->addOption(
-                'redmine-key',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Redmine API key.'
-            )
         ;
+        $this->configureRedmineOptions();
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $this->output = $output;
-
-        $url = $input->getOption('redmine-url');
-        $key = $input->getOption('redmine-key');
-
-        if (strlen($url) <= 0 || strlen($key) <= 0) {
-            throw new \RuntimeException('Both --redmine-url and --redmine-key are required.');
-        }
-
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            throw new \RuntimeException('Invalid URL for --redmine-url.');
-        }
-
-        $this->redmine = new Client($url, $key);
+        $this->initializeRedmineClient($input);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -85,7 +60,7 @@ class Import extends Command
 
         try {
             foreach ($this->dump->projects as $project) {
-                $this->dump->storyMapping = $this->createProjectIssues($project);
+                $this->createProjectIssues($project);
             }
         } finally {
             $this->dump->write();
@@ -190,10 +165,17 @@ class Import extends Command
                 continue;
             }
 
-            $issueId = $this->createSingleIssue($story, $projectId);
-            $this->dump->storyMapping[$story->id] = $issueId;
+            $issueId = $this->createSingleIssue($story, $projectId, $project->id);
 
+            /* HACK: Can't set the status by name or id during creation (PHP API bug?)
+             * so we do it here. */
+            $this->setIssueStatus($issueId, $story, $project->id);
             $this->createIssueComments($issueId, $story);
+
+            $this->dump->storyMapping[$story->id] = $issueId;
+            /* Allow ^C at the price of one write per issue. An issue can take
+             * a second so this should not be a problem. */
+            $this->dump->write();
 
             $progress->advance();
         }
@@ -212,7 +194,7 @@ class Import extends Command
     {
         static $users = null;
         if ($users === null) {
-            $users = $this->getUserLoginToIdMapping();
+            $users = $this->redmine->api('user')->listing();
         }
 
         $this->redmine->setImpersonateUser(
@@ -296,16 +278,14 @@ class Import extends Command
     }
 
     /**
-     * @return int[] string login => int id
+     * @param int $issueId
+     * @param int $agilezenProjectId which project to use to get phases map.
+     * @return int
      */
-    private function getUserLoginToIdMapping()
+    private function setIssueStatus($issueId, Story $story, $agilezenProjectId)
     {
-        $ret = [];
-        $users = $this->redmine->api('user')->all()['users'];
-        foreach ($users as $user) {
-            $ret[$user['login']] = $user['id'];
-        }
-
-        return $ret;
+        assert('count($this->dump->phaseMap) > 0');
+        $status = $this->dump->phaseMap[$agilezenProjectId][$story->phase->name];
+        $this->redmine->api('issue')->update($issueId, compact('status'));
     }
 }

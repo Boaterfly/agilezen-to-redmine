@@ -82,9 +82,10 @@ class Story implements Marshallable
         ;
 
         $creator = new User($raw['creator']);
+        $phase = new Phase($raw['phase']);
 
         return new self(
-            compact('owner', 'creator', 'comments', 'steps') + $raw
+            compact('phase', 'owner', 'creator', 'comments', 'steps') + $raw
         );
     }
 
