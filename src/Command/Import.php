@@ -60,7 +60,7 @@ class Import extends Command
 
         try {
             foreach ($this->dump->projects as $project) {
-                $this->dump->storyMapping = $this->createProjectIssues($project);
+                $this->createProjectIssues($project);
             }
         } finally {
             $this->dump->write();
@@ -165,10 +165,17 @@ class Import extends Command
                 continue;
             }
 
-            $issueId = $this->createSingleIssue($story, $projectId);
-            $this->dump->storyMapping[$story->id] = $issueId;
+            $issueId = $this->createSingleIssue($story, $projectId, $project->id);
 
+            /* HACK: Can't set the status by name or id during creation (PHP API bug?)
+             * so we do it here. */
+            $this->setIssueStatus($issueId, $story, $project->id);
             $this->createIssueComments($issueId, $story);
+
+            $this->dump->storyMapping[$story->id] = $issueId;
+            /* Allow ^C at the price of one write per issue. An issue can take
+             * a second so this should not be a problem. */
+            $this->dump->write();
 
             $progress->advance();
         }
@@ -268,5 +275,17 @@ class Import extends Command
     private function getRedmineProjectId(Project $project)
     {
         return $this->redmine->api('project')->getIdByName($project->name);
+    }
+
+    /**
+     * @param int $issueId
+     * @param int $agilezenProjectId which project to use to get phases map.
+     * @return int
+     */
+    private function setIssueStatus($issueId, Story $story, $agilezenProjectId)
+    {
+        assert('count($this->dump->phaseMap) > 0');
+        $status = $this->dump->phaseMap[$agilezenProjectId][$story->phase->name];
+        $this->redmine->api('issue')->update($issueId, compact('status'));
     }
 }
