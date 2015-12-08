@@ -187,7 +187,7 @@ class Import extends Command
     {
         static $users = null;
         if ($users === null) {
-            $users = $this->getUserLoginToIdMapping();
+            $users = $this->redmine->api('user')->listing();
         }
 
         $this->redmine->setImpersonateUser(
@@ -268,19 +268,5 @@ class Import extends Command
     private function getRedmineProjectId(Project $project)
     {
         return $this->redmine->api('project')->getIdByName($project->name);
-    }
-
-    /**
-     * @return int[] string login => int id
-     */
-    private function getUserLoginToIdMapping()
-    {
-        $ret = [];
-        $users = $this->redmine->api('user')->all()['users'];
-        foreach ($users as $user) {
-            $ret[$user['login']] = $user['id'];
-        }
-
-        return $ret;
     }
 }

@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ChoiceQuestion;
 
 use AgileZenToRedmine\Dump;
 use AgileZenToRedmine\Redmine;
@@ -40,5 +41,26 @@ class MapPhasesToStatuses extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->dump = Dump::load($input->getOption('output-dir'));
+        $map = [];
+
+        foreach ($this->dump->projects as $project) {
+            $phases = collection_column($project->phases, 'name');
+            $statuses = array_keys($this->redmine->api('issue_status')->listing());
+            $map[$project->id] = [];
+
+            $output->writeln("For project #{$project->id} '{$project->name}':");
+            foreach ($phases as $phase) {
+                $helper = $this->getHelper('question');
+                $question = new ChoiceQuestion(
+                    "Map the AgileZen phase '$phase' to Redmine status:",
+                    $statuses
+                );
+                $question->setErrorMessage('Invalid status.');
+                $map[$project->id][$phase] = $helper->ask($input, $output, $question);
+            }
+        }
+
+        $this->dump->phaseMap = $map;
+        $this->dump->write();
     }
 }

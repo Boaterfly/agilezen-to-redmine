@@ -33,7 +33,12 @@ allows one session per user.
 
 You may need to change the maximum attachment size in Redmine settings.
 
-### 4. Import into Redmine
+### 4. Map AgileZen phases to Redmine statuses.
+```shell
+./agilezen-to-redmine map-phases-to-statuses --redmine-url=URL --redmine-key=KEY
+```
+
+### 5. Import into Redmine
 ```shell
 ./agilezen-to-redmine import --redmine-url=URL --redmine-key=KEY
 ```

@@ -20,6 +20,9 @@ class Dump
     /// @var int[]
     public $storyMapping = [];
 
+    /// @var string[] phase name => issue status name
+    public $phaseMap = [];
+
     /**
      * @param string $outputDir
      */
