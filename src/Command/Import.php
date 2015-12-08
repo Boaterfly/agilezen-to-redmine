@@ -2,7 +2,6 @@
 
 namespace AgileZenToRedmine\Command;
 
-use Redmine\Client;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,8 +16,7 @@ use AgileZenToRedmine\Redmine;
 
 class Import extends Command
 {
-    /// @var Redmine\Client
-    private $redmine;
+    use RedmineCommandTrait;
 
     /// @var OutputInterface
     private $output;
@@ -38,37 +36,14 @@ class Import extends Command
                 'Where to read the exported data.',
                 'export'
             )
-            ->addOption(
-                'redmine-url',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Redmine HTTP URL.'
-            )
-            ->addOption(
-                'redmine-key',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Redmine API key.'
-            )
         ;
+        $this->configureRedmineOptions();
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $this->output = $output;
-
-        $url = $input->getOption('redmine-url');
-        $key = $input->getOption('redmine-key');
-
-        if (strlen($url) <= 0 || strlen($key) <= 0) {
-            throw new \RuntimeException('Both --redmine-url and --redmine-key are required.');
-        }
-
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            throw new \RuntimeException('Invalid URL for --redmine-url.');
-        }
-
-        $this->redmine = new Client($url, $key);
+        $this->initializeRedmineClient($input);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

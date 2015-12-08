@@ -14,5 +14,6 @@ $app->addCommands([
     new Command\DownloadAttachments(),
     new Command\Export(),
     new Command\Import(),
+    new Command\MapPhasesToStatuses(),
 ]);
 $app->run();
