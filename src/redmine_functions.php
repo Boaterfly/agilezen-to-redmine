@@ -83,26 +83,40 @@ function subject_from_agilezen_story(Story $story)
 /**
  * @return string
  */
-function description_from_agilezen_story(Story $story)
+function description_from_agilezen_story(Story $story, Project $project)
 {
+    $link = sprintf(
+        '[#%s](https://agilezen.com/project/%s/story/%s)',
+        $story->id,
+        $project->id,
+        $story->id
+    );
+
     return implode("\n", [
         $story->text,
         '',
         $story->details,
         '',
-        "Story #{$story->id} from AgileZen, originally created at {$story->getCreateTime()}."
+        "Story $link from AgileZen, originally created at {$story->getCreateTime()}."
     ]);
 }
 
 /**
  * @return string
  */
-function note_from_agilezen_comment(Comment $comment)
+function note_from_agilezen_comment(Comment $comment, Story $story, Project $project)
 {
+    $link = sprintf(
+        '[#%s](https://agilezen.com/project/%s/story/%s#comments)',
+        $comment->id,
+        $project->id,
+        $story->id
+    );
+
     return implode("\n", [
         $comment->text,
         '',
-        "Comment #{$comment->id} from AgileZen, originally created at {$comment->createTime}.",
+        "Comment $link from AgileZen, originally created at {$comment->createTime}.",
     ]);
 }
 

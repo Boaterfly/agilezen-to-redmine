@@ -156,7 +156,7 @@ class Import extends Command
         $progress->start();
         $skipped = 0;
 
-        $projectId = $this->getRedmineProjectId($project);
+        $redmineProjectId = $this->getRedmineProjectId($project);
 
         foreach ($project->stories as $story) {
             if (array_key_exists($story->id, $this->dump->storyMapping)) {
@@ -165,12 +165,12 @@ class Import extends Command
                 continue;
             }
 
-            $issueId = $this->createSingleIssue($story, $projectId, $project->id);
+            $issueId = $this->createSingleIssue($story, $project, $redmineProjectId);
 
             /* HACK: Can't set the status by name or id during creation (PHP API bug?)
              * so we do it here. */
             $this->setIssueStatus($issueId, $story, $project->id);
-            $this->createIssueComments($issueId, $story);
+            $this->createIssueComments($issueId, $story, $project);
 
             $this->dump->storyMapping[$story->id] = $issueId;
             /* Allow ^C at the price of one write per issue. An issue can take
@@ -186,11 +186,11 @@ class Import extends Command
     }
 
     /**
-     * @param int $projectId in which Redmine project this issue will be
+     * @param int $redmineProjectId in which Redmine project this issue will be
      * created.
      * @return int created Redmine issue ID.
      */
-    private function createSingleIssue(Story $story, $projectId)
+    private function createSingleIssue(Story $story, Project $project, $redmineProjectId)
     {
         static $users = null;
         if ($users === null) {
@@ -207,9 +207,9 @@ class Import extends Command
         }
 
         $res = $this->redmine->api('issue')->create([
-            'project_id' => $projectId,
+            'project_id' => $redmineProjectId,
             'subject' => Redmine\subject_from_agilezen_story($story),
-            'description' => Redmine\description_from_agilezen_story($story),
+            'description' => Redmine\description_from_agilezen_story($story, $project),
             'assigned_to_id' => $assignedToId,
             'uploads' => $this->uploadStoryAttachments($story),
         ]);
@@ -255,7 +255,7 @@ class Import extends Command
     /**
      * @return int $issueId
      */
-    private function createIssueComments($issueId, Story $story)
+    private function createIssueComments($issueId, Story $story, Project $project)
     {
         foreach ($story->comments as $comment) {
             $this->redmine->setImpersonateUser(
@@ -264,7 +264,7 @@ class Import extends Command
 
             $this->redmine->api('issue')->addNoteToIssue(
                 $issueId,
-                Redmine\note_from_agilezen_comment($comment)
+                Redmine\note_from_agilezen_comment($comment, $story, $project)
             );
 
             $this->redmine->setImpersonateUser(null);
