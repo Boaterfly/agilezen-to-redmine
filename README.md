@@ -39,9 +39,14 @@ You may need to change the maximum attachment size in Redmine settings.
 ```
 
 ### 5. Import into Redmine
+**Disable Redmine mail notifications before this step or you will spam every
+user with a mail for every action he ever did.**
+
 ```shell
 ./agilezen-to-redmine import --redmine-url=URL --redmine-key=KEY
 ```
+
+Don't forget to turn notifications back on.
 
 ## Notes
 * No effort was made to reduce memory consumption. Your whole AgileZen dataset
