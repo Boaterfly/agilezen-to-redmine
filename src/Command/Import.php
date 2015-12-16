@@ -178,7 +178,7 @@ class Import extends Command
                  * a second so this should not be a problem. */
                 $this->dump->write();
             } catch (\RuntimeException $e) {
-                $this->output->writeln("Failed to create issue for story {$project->id}");
+                $this->output->writeln("Failed to create issue for story {$story->id}");
             }
 
             $progress->advance();
