@@ -165,17 +165,21 @@ class Import extends Command
                 continue;
             }
 
-            $issueId = $this->createSingleIssue($story, $project, $redmineProjectId);
+            try {
+                $issueId = $this->createSingleIssue($story, $project, $redmineProjectId);
 
-            /* HACK: Can't set the status by name or id during creation (PHP API bug?)
-             * so we do it here. */
-            $this->setIssueStatus($issueId, $story, $project->id);
-            $this->createIssueComments($issueId, $story, $project);
+                /* HACK: Can't set the status by name or id during creation (PHP API bug?)
+                 * so we do it here. */
+                $this->setIssueStatus($issueId, $story, $project->id);
+                $this->createIssueComments($issueId, $story, $project);
+                $this->dump->storyMapping[$story->id] = $issueId;
 
-            $this->dump->storyMapping[$story->id] = $issueId;
-            /* Allow ^C at the price of one write per issue. An issue can take
-             * a second so this should not be a problem. */
-            $this->dump->write();
+                /* Allow ^C at the price of one write per issue. An issue can take
+                 * a second so this should not be a problem. */
+                $this->dump->write();
+            } catch (\RuntimeException $e) {
+                $this->output->writeln("Failed to create issue for story {$project->id}");
+            }
 
             $progress->advance();
         }
@@ -217,7 +221,8 @@ class Import extends Command
         $this->redmine->setImpersonateUser(null);
 
         if (empty($res->id)) {
-            throw new \RuntimeException("Unable to create issue for story #{$story->id}: {$res->error}.");
+            $error = empty($res->error) ? 'no response' : $res->error;
+            throw new \RuntimeException("Unable to create issue for story #{$story->id}: $error.");
         }
         $issueId = (int) ((string) $res->id);
 
