@@ -26,10 +26,10 @@ settings](https://agilezen.com/settings).
 ./agilezen-to-redmine download-attachments --user=USER --password=PASSWORD
 ```
 
-The AgileZen API can't be used to download attachments so an acual user has to
+The AgileZen API can't be used to download attachments so an actual user has to
 be spoofed.  
-**Do not log back in AgileZen** while files are being downloaded, AgileZen only
-allows one session per user.
+**Do not log back into AgileZen** while files are being downloaded, AgileZen
+only allows one session per user.
 
 You may need to change the maximum attachment size in Redmine settings.
 
@@ -54,7 +54,7 @@ Don't forget to turn notifications back on.
 * No effort was made to reduce the number of files in a single directory. If
   you have enough attachments to break your local filesystem, congratulations.
 * There is no way to fetch all attachments at once or to know if a story has
-  any, so **there will be one HTTP GET request per story** plus one per
+  any, so there will be one HTTP GET request per story plus one per
   attachment.
 * Requests are done synchronously and sequentially.
 * There is an `--output-dir` option set to `export` by default. Change this if
